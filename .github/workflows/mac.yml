@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "flash (Flash Player + client seuls) ou launcher (Draco.app complet)"
+        description: "flash (Flash Player + client seuls), storage (réglages de stockage Flash) ou launcher (Draco.app complet)"
         default: launcher
       runners:
         description: "Mac GitHub (liste JSON)"
@@ -39,6 +39,11 @@ jobs:
         env:
           DRACO_API: ${{ inputs.api }}
         run: bash ci/flash-test.sh
+      - name: Stockage local Flash (réglages préremplis)
+        if: inputs.mode == 'storage'
+        env:
+          DRACO_API: ${{ inputs.api }}
+        run: bash ci/storage-test.sh
       - name: Launcher Draco.app
         if: inputs.mode == 'launcher'
         env:
