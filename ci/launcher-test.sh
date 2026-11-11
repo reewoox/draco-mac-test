@@ -37,6 +37,8 @@ cp "$R/profile-local/local-client-processes.json" "$OUT/" 2>/dev/null || true
 ps -axo pid=,comm= | grep -iE "draco|flash|electron" | tee "$OUT/ps.txt"
 lsof -nP -iTCP -sTCP:ESTABLISHED 2>/dev/null | grep -iE "flash|draco|electron" | tee "$OUT/lsof.txt"
 find "$HOME/Library/Preferences/Macromedia" -maxdepth 9 2>/dev/null | head -80 > "$OUT/macromedia.txt"
+{ echo "--- données Flash (.sol)"; find "$HOME/Library/Preferences/Macromedia/Flash Player" -name '*.sol' -exec stat -f '%z %N' {} \; 2>/dev/null
+  echo "--- réglages"; python3 ci/sol.py dump "$HOME/Library/Preferences/Macromedia/Flash Player/macromedia.com/support/flashplayer/sys/#local/settings.sol" "$HOME"/Library/Preferences/Macromedia/Flash\ Player/#SharedObjects/*/localhost/ANKOPTIONSSO.sol; } >> "$OUT/steps.txt" 2>&1
 cat "$HOME/Library/Preferences/Macromedia/Flash Player/#Security/FlashPlayerTrust/draco.cfg" >> "$OUT/steps.txt" 2>/dev/null || true
 ls -la "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null | tail -20 > "$OUT/crash-reports.txt"
 cp "$HOME"/Library/Logs/DiagnosticReports/*Draco* "$HOME"/Library/Logs/DiagnosticReports/*Flash* "$OUT/" 2>/dev/null || true

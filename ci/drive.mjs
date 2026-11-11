@@ -80,6 +80,18 @@ try {
     const elapsed = (Date.now() - begin) / 1000;
     while (shots.length && elapsed >= shots[0]) shot('05-jeu-' + shots.shift() + 's');
   }
+  // Second launch in French: the launcher writes the client's language into Flash's shared objects (they exist
+  // after the first launch), the game must open in French.
+  if (ok) {
+    try { execFileSync('/usr/bin/pkill', ['-f', 'Flash Player.app/Contents/MacOS/Flash Player']); } catch {}
+    await until('fermeture du jeu vue par le launcher', 'L.getLocalRuntimeState().then(s => (s.processes || []).length === 0)', 60000);
+    await evaluate("setLang('fr'), true"); await sleep(2000);
+    await until('bouton JOUER actif (2)', "!document.querySelector('#btnPlay').disabled", 60000);
+    await evaluate("document.querySelector('#btnPlay').click(), true");
+    log('JOUER cliqué (français)');
+    await sleep(60000); shot('06-jeu-fr-60s');
+    log('lancement 2 :', await evaluate("L.getLocalRuntimeState().then(s => JSON.stringify((s.nativeServices?.events || []).map(e => e.type + (e.pid ? '@' + e.pid : ''))))").catch(error => 'erreur ' + error.message));
+  }
 } catch (error) {
   log('ÉCHEC :', error.message, '| messages :', await toasts());
   shot('99-echec');
