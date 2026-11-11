@@ -1,0 +1,54 @@
+name: Draco Mac
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "flash (Flash Player + client seuls) ou launcher (Draco.app complet)"
+        default: launcher
+      runners:
+        description: "Mac GitHub (liste JSON)"
+        default: '["macos-15","macos-15-intel"]'
+      zip_url:
+        description: "Draco-Launcher-Mac.zip à tester (mode launcher)"
+        default: "https://github.com/reewoox/draco-mac-test/releases/download/test/Draco-Launcher-Mac.zip"
+      api:
+        description: "API du site Draco"
+        default: "https://ml.tail76e554.ts.net:8443"
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.runners) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Machine
+        run: |
+          sw_vers; uname -m; sysctl -n machdep.cpu.brand_string || true
+          (arch -x86_64 /usr/bin/true && echo "x86_64 : OK") || echo "x86_64 : indisponible (Rosetta absent)"
+      - name: Rosetta (puces Apple)
+        if: runner.arch == 'ARM64'
+        run: arch -x86_64 /usr/bin/true || sudo softwareupdate --install-rosetta --agree-to-license
+      - name: Flash Player + client seuls
+        if: inputs.mode == 'flash'
+        env:
+          DRACO_API: ${{ inputs.api }}
+        run: bash ci/flash-test.sh
+      - name: Launcher Draco.app
+        if: inputs.mode == 'launcher'
+        env:
+          DRACO_EMAIL: ${{ secrets.DRACO_EMAIL }}
+          DRACO_PASSWORD: ${{ secrets.DRACO_PASSWORD }}
+          ZIP_URL: ${{ inputs.zip_url }}
+        run: bash ci/launcher-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: draco-${{ inputs.mode }}-${{ matrix.os }}
+          path: out/
+          if-no-files-found: warn
